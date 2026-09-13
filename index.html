@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Log — Mayank Goyal</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-card">
+    <p class="lock-title" id="lockTitle">Case Log</p>
+    <p class="lock-sub" id="lockSub">Checking lock status…</p>
+    <input type="password" inputmode="numeric" pattern="[0-9]*" id="pinInput" class="pin-input" maxlength="8" autocomplete="off" placeholder="····" style="display:none;">
+    <input type="password" inputmode="numeric" pattern="[0-9]*" id="pinConfirmInput" class="pin-input" maxlength="8" autocomplete="off" placeholder="Confirm PIN" style="display:none;">
+    <p class="lock-error" id="lockError"></p>
+    <button class="btn" id="pinSubmitBtn" style="width:100%; display:none;">Unlock</button>
+    <p class="lock-hint" id="lockHint"></p>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <p class="brand">Case Log</p>
+    <p class="brand-sub">FSL · Mayank Goyal</p>
+    <nav>
+      <button class="nav-item active" data-page="dashboard"><span class="nav-dot"></span>Dashboard</button>
+      <button class="nav-item" data-page="cases"><span class="nav-dot"></span>Case Log</button>
+      <button class="nav-item" data-page="add"><span class="nav-dot"></span>Add Case</button>
+      <button class="nav-item" data-page="db"><span class="nav-dot"></span>Database</button>
+    </nav>
+    <div class="sidebar-foot">
+      <div id="footCount">— cases on record</div>
+      <div style="margin-top:8px; display:flex; align-items:center; gap:6px;" id="syncStatus">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0;"></span>
+        <span>Checking database…</span>
+      </div>
+      <button class="icon-btn" id="lockNowBtn" style="margin-top:10px; padding:4px 0; color:var(--text-faint);">🔒 Lock now</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- DASHBOARD -->
+    <section class="page active" id="page-dashboard">
+      <h1>Mayank Goyal (Senior Scientific Assistant, Cyber Forensic Division)</h1>
+      <h3>Dashboard</h3>
+      <p class="page-sub">Overview of every case currently on record.</p>
+      <div class="panel" id="dbBanner" style="display:none; align-items:center; gap:12px; padding:14px 20px; margin-bottom:22px; border-left:3px solid var(--amber);">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;"></span>
+        <span style="font-size:12.5px; color:var(--text-dim);">You haven't connected your own database yet, so cases are only saved to this Claude session for now. <a href="#" id="dbBannerLink" style="color:#C4B5FD;">Set up your own free database</a> to access this from your phone and other devices.</span>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Total cases</div></div>
+        <div class="stat reported"><div class="stat-num" id="statReported">0</div><div class="stat-label">Reported</div></div>
+        <div class="stat collected"><div class="stat-num" id="statCollected">0</div><div class="stat-label">Collected</div></div>
+        <div class="stat hold"><div class="stat-num" id="statHold">0</div><div class="stat-label">On hold</div></div>
+        <div class="stat pending"><div class="stat-num" id="statPending">0</div><div class="stat-label">Pending</div></div>
+      </div>
+
+      <div class="panel">
+        <h2>Monthly breakdown</h2>
+        <div id="monthlyBars"></div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--blue)"></span>Reported</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--green)"></span>Collected</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--slate)"></span>Hold</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--amber)"></span>Pending</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Recently opened</h2>
+        <div class="table-wrap" id="recentTableWrap"></div>
+      </div>
+    </section>
+
+    <!-- CASE LOG -->
+    <section class="page" id="page-cases">
+      <h1>Case Log</h1>
+      <p class="page-sub">Every case, searchable and filterable.</p>
+
+      <div class="toolbar">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search FSL no., FIR no., police station, sections...">
+        <select class="filter-select" id="statusFilter">
+          <option value="">All statuses</option>
+          <option value="Reported">Reported</option>
+          <option value="Collected">Collected</option>
+          <option value="Hold">Hold</option>
+          <option value="Pending">Pending</option>
+        </select>
+        <select class="filter-select" id="monthFilter">
+          <option value="">All months</option>
+        </select>
+        <button class="btn secondary" id="downloadCsvBtn">⬇ Download CSV</button>
+        <button class="btn" id="addCaseBtn">+ Add case</button>
+      </div>
+      <p class="page-sub" style="margin:-8px 0 16px; font-size:12px;" id="downloadHint">Download exports whatever the filters above are currently showing — set Status to "Collected" (say) and it downloads just your collected cases; same for any month.</p>
+
+      <div class="table-wrap" id="casesTableWrap"></div>
+    </section>
+
+    <!-- DATABASE -->
+    <section class="page" id="page-db">
+      <h1>Database</h1>
+      <p class="page-sub">Connect your database — your own, free, and easy to peek at directly.</p>
+
+      <div class="panel" id="dbConnectedPanel" style="display:none;">
+        <h2>Connected</h2>
+        <p style="color:var(--text-dim); font-size:13.5px; margin:0 0 16px;">Your cases are stored in your own and refresh every few seconds across every device where you open this page.</p>
+        <div class="form-actions" style="margin-top:0;">
+          <button class="btn secondary" id="refreshSheetBtn">Refresh now</button>
+          <button class="btn secondary" id="disconnectDbBtn">Disconnect this sheet</button>
+        </div>
+      </div>
+
+        <div class="field full" style="margin-bottom:16px;">
+          <label>Apps Script code</label>
+          <textarea id="appsScriptCode" rows="6" readonly style="font-family: var(--mono); font-size:11.5px; color:var(--text-dim);"></textarea>
+          <button class="btn secondary" id="copyScriptBtn" style="align-self:flex-start; margin-top:8px;">Copy script</button>
+        </div>
+
+        <div class="field full" style="margin-bottom:16px;">
+          <label for="f_sheetsUrl">Your Web app URL</label>
+          <input type="text" id="f_sheetsUrl" class="mono-input" placeholder="https://script.google.com/macros/s/XXXXXXX/exec">
+        </div>
+      <div class="form-actions" style="margin-top:0;">
+        <button class="btn" id="connectDbBtn">Connect sheet</button>
+        <span id="dbConnectStatus" style="font-size:12.5px; color:var(--text-dim); align-self:center;"></span>
+      </div>  
+
+
+      <div class="panel">
+        <h2>App lock</h2>
+        <p style="color:var(--text-dim); font-size:13.5px; margin:0 0 16px;">Change your PIN, or turn the lock off entirely. This is a basic gate for a personal device, not strong security.</p>
+        <div class="form-grid">
+          <div class="field">
+            <label for="f_currentPin">Current PIN</label>
+            <input type="password" inputmode="numeric" pattern="[0-9]*" id="f_currentPin" class="mono-input" maxlength="8">
+          </div>
+          <div class="field"></div>
+          <div class="field">
+            <label for="f_newPin">New PIN</label>
+            <input type="password" inputmode="numeric" pattern="[0-9]*" id="f_newPin" class="mono-input" maxlength="8">
+          </div>
+          <div class="field">
+            <label for="f_newPinConfirm">Confirm new PIN</label>
+            <input type="password" inputmode="numeric" pattern="[0-9]*" id="f_newPinConfirm" class="mono-input" maxlength="8">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" id="changePinBtn">Update PIN</button>
+          <button class="btn secondary" id="removePinBtn">Turn off PIN lock</button>
+          <span id="pinChangeStatus" style="font-size:12.5px; color:var(--text-dim); align-self:center;"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADD CASE -->
+    <section class="page" id="page-add">
+      <h1 id="formTitle">Add case</h1>
+      <p class="page-sub" id="formSub">Enter the case details below — they're saved to your case log automatically.</p>
+
+      <div class="panel">
+        <form id="caseForm">
+          <input type="hidden" id="editId">
+          <div class="form-grid">
+            <div class="field">
+              <label for="f_fslNo">FSL No.</label>
+              <input type="text" id="f_fslNo" class="mono-input" placeholder="SFSLDLH-XXXX-CO-XXX-XX">
+            </div>
+            <div class="field">
+              <label for="f_firNo">FIR No.</label>
+              <input type="text" id="f_firNo" class="mono-input" placeholder="e.g. 85/25">
+            </div>
+            <div class="field">
+              <label for="f_policeStation">Police station</label>
+              <input type="text" id="f_policeStation" placeholder="e.g. CYBER SOUTH">
+            </div>
+            <div class="field">
+              <label for="f_us">U/S (sections)</label>
+              <input type="text" id="f_us" placeholder="e.g. 376/506 IPC">
+            </div>
+            <div class="field">
+              <label for="f_exhibitCapacity">Exhibit capacity</label>
+              <input type="text" id="f_exhibitCapacity" placeholder="e.g. MP1 = 128GB">
+            </div>
+            <div class="field">
+              <label for="f_exhibits">Exhibits</label>
+              <input type="text" id="f_exhibits" placeholder="e.g. MP1(SC1+SC2)">
+            </div>
+            <div class="field">
+              <label for="f_extractionFrom">Extraction from</label>
+              <input type="text" id="f_extractionFrom" placeholder="e.g. WS-27, UFED">
+            </div>
+            <div class="field">
+              <label for="f_letterType">Letter type</label>
+              <input type="text" id="f_letterType" placeholder="e.g. Priority letter">
+            </div>
+            <div class="field">
+              <label for="f_courtDoReceived">Court/DO received</label>
+              <input type="date" id="f_courtDoReceived" placeholder="dd.mm.yyyy">
+            </div>
+            <div class="field">
+              <label for="f_dateGiven">Date given</label>
+              <input type="date" id="f_dateGiven" placeholder="dd.mm.yyyy">
+            </div>
+            <div class="field">
+              <label for="f_openingDate">Opening date</label>
+              <input type="date" id="f_openingDate" placeholder="dd.mm.yyyy">
+              <span class="hint">Used to auto-suggest the month below.</span>
+            </div>
+            <div class="field">
+              <label for="f_month">Month</label>
+              <select id="f_month">
+                <option value="">— select —</option>
+                <option>January</option><option>February</option><option>March</option>
+                <option>April</option><option>May</option><option>June</option>
+                <option>July</option><option>August</option><option>September</option>
+                <option>October</option><option>November</option><option>December</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="f_reportedDate">Reported date</label>
+              <input type="date" id="f_reportedDate" placeholder="dd.mm.yyyy">
+            </div>
+            <div class="field">
+              <label for="f_collectedDate">Collected date</label>
+              <input type="date" id="f_collectedDate" placeholder="dd.mm.yyyy">
+            </div>
+            <div class="field">
+              <label for="f_status">Status</label>
+              <select id="f_status">
+                <option value="Pending">Pending</option>
+                <option value="Reported">Reported</option>
+                <option value="Collected">Collected</option>
+                <option value="Hold">Hold</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label for="f_remarks1">Remarks</label>
+              <textarea id="f_remarks1" placeholder="e.g. locked and financed, unable to bypass..."></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn" id="saveBtn">Save case</button>
+            <button type="button" class="btn secondary" id="cancelEditBtn" style="display:none;">Cancel edit</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:400px;">
+    <h2>Delete this case?</h2>
+    <p style="color:var(--text-dim); font-size:13.5px;">This can't be undone. The case record will be permanently removed from your log.</p>
+    <div class="form-actions">
+      <button class="btn danger" id="confirmDeleteBtn">Delete case</button>
+      <button class="btn secondary" id="cancelDeleteBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="viewModal">
+  <div class="modal" style="max-width:760px;">
+    <h2 id="viewTitle" style="font-family: var(--mono); font-size:16px;"></h2>
+    <div class="detail-grid" id="viewDetailGrid"></div>
+
+    <h2 style="margin-top:24px;">Documents</h2>
+    <p id="viewDocsGateNote" style="display:none; color:var(--text-dim); font-size:13px; margin:0 0 16px;">
+      Connect a Google Sheet database (Database tab) to upload and store documents for this case.
+    </p>
+    <div id="docsList"></div>
+
+    <div class="form-actions" style="margin-top:24px;">
+      <button class="btn secondary" id="closeViewBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="seed-data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
