@@ -97,7 +97,7 @@
   }
 
   /* Main */
-  main{ flex:1; padding: 34px 40px 60px; max-width: 1180px; }
+  main{ flex:1; padding: 34px 40px 60px; max-width: max-content; }
   .page{ display:none; }
   .page.active{ display:block; }
 
