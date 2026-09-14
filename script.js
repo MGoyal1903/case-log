@@ -663,6 +663,7 @@ const DOC_TYPES = [
   { key: 'intimation', label: 'Intimation' },
   { key: 'forwardingLetter', label: 'Forwarding Letter' },
   { key: 'examinationSheet', label: 'Examination Sheet' },
+   { key: 'certificate', label: 'Certificate' },
 ];
 const DETAIL_FIELDS = [
   ['fslNo','FSL No.'], ['firNo','FIR No.'], ['policeStation','Police Station'],
